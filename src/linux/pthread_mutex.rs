@@ -13,10 +13,12 @@ pub struct PthreadMutex {
 }
 
 impl PthreadMutex {
-    // SAFETY: dest must be valid for reads and writes as well as
-    // correctly aligned and large enough for PthreadMutex.
-    // There must not be concurrent access to dest during the call.
-    // On Err, the caller must treat dest as uninitialized.
+    /// # Safety
+    /// All the following invariants must be satisfied:
+    /// * `dest` must be valid for reads and writes as well as correctly aligned and large enough for `PthreadMutex`
+    /// * there must not be concurrent access to `dest` during the call
+    /// * `dest` stays at the same memory location and remains valid for the whole program execution
+    /// * on `Err`, the caller must treat dest as uninitialized.
     pub unsafe fn init(dest: *mut MaybeUninit<Self>) -> Result<(), MutexError> {
         let mut attr = MaybeUninit::uninit();
         // SAFETY: MaybeUninit guarantees validity, writeability, size and align of attr
@@ -56,7 +58,7 @@ impl PthreadMutex {
 
 impl PlatformMutex for PthreadMutex {
     fn lock(&self) -> Result<(), MutexError> {
-        match (unsafe {pthread_mutex_lock(self.mutex.get())}) {
+        match unsafe {pthread_mutex_lock(self.mutex.get())} {
             0 => Ok(()),
             libc::EDEADLK => Err(MutexError::NestedLockError),
             _ => Err(MutexError::UnknownError)
@@ -64,7 +66,7 @@ impl PlatformMutex for PthreadMutex {
     }
 
     fn unlock(&self) -> Result<(), MutexError> {
-        match (unsafe {pthread_mutex_unlock(self.mutex.get())}) {
+        match unsafe {pthread_mutex_unlock(self.mutex.get())} {
             0 => Ok(()),
             libc::EPERM => Err(MutexError::UnauthorizedUnlockError),
             _ => Err(MutexError::UnknownError)
@@ -72,7 +74,7 @@ impl PlatformMutex for PthreadMutex {
     }
 
     fn try_lock(&self) -> Result<(), MutexError> {
-        match (unsafe {pthread_mutex_trylock(self.mutex.get())}) {
+        match unsafe {pthread_mutex_trylock(self.mutex.get())} {
             0 => Ok(()),
             libc::EBUSY => Err(MutexError::TryLockError),
             _ => Err(MutexError::UnknownError)

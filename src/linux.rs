@@ -1,1 +1,1 @@
-mod pthread_mutex;
+pub mod pthread_mutex;
