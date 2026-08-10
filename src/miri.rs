@@ -13,6 +13,7 @@ cfg_if::cfg_if! {
             _placeholder: u8
         }
 
+        // SAFETY: see ptr::write
         pub unsafe fn pthread_mutex_init(lock: *mut pthread_mutex_t, _attr: *const pthread_mutexattr_t) -> c_int {
             unsafe {
                 lock.write(pthread_mutex_t {
@@ -22,35 +23,43 @@ cfg_if::cfg_if! {
             0
         }
 
+        // SAFETY: Safe. Only marked as `unsafe` to exactly match the signature
         pub unsafe fn pthread_mutex_lock(_lock: *mut pthread_mutex_t) -> c_int {
             0
         }
 
+        // SAFETY: Safe. Only marked as `unsafe` to exactly match the signature
         pub unsafe fn pthread_mutex_unlock(_lock: *mut pthread_mutex_t) -> c_int {
             0
         }
 
+        // SAFETY: Safe. Only marked as `unsafe` to exactly match the signature
         pub unsafe fn pthread_mutex_trylock(_lock: *mut pthread_mutex_t) -> c_int {
             0
         }
 
+        // SAFETY: see ptr::read
         pub unsafe fn pthread_mutex_destroy(lock: *mut pthread_mutex_t) -> c_int {
             let _lock = unsafe {lock.read()};
             0
         }
 
+        // SAFETY: Safe. Only marked as `unsafe` to exactly match the signature
         pub unsafe fn pthread_mutexattr_init(_attr: *mut pthread_mutexattr_t) -> c_int {
             0
         }
 
+        // SAFETY: Safe. Only marked as `unsafe` to exactly match the signature
         pub unsafe fn pthread_mutexattr_settype(_attr: *mut pthread_mutexattr_t, _type: c_int) -> c_int {
             0
         }
 
+        // SAFETY: Safe. Only marked as `unsafe` to exactly match the signature
         pub unsafe fn pthread_mutexattr_setpshared(_attr: *mut pthread_mutexattr_t, _pshared: c_int) -> c_int {
             0
         }
 
+        // SAFETY: Safe. Only marked as `unsafe` to exactly match the signature
         pub unsafe fn pthread_mutexattr_destroy(_attr: *mut pthread_mutexattr_t) -> c_int {
             0
         }
