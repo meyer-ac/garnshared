@@ -1,8 +1,9 @@
-use nix::libc::{self, pthread_mutex_t, pthread_mutex_lock, pthread_mutex_unlock, pthread_mutex_trylock, pthread_mutex_destroy, pthread_mutexattr_init, pthread_mutexattr_settype, PTHREAD_MUTEX_ERRORCHECK, pthread_mutexattr_setpshared, PTHREAD_PROCESS_SHARED, pthread_mutexattr_destroy, pthread_mutex_init};
+use nix::libc::{self, PTHREAD_MUTEX_ERRORCHECK, PTHREAD_PROCESS_SHARED};
 use std::cell::UnsafeCell;
 use std::marker::PhantomPinned;
 use std::mem::MaybeUninit;
 use std::ptr;
+use crate::miri::{pthread_mutex_t, pthread_mutex_lock, pthread_mutex_unlock, pthread_mutex_trylock, pthread_mutex_destroy, pthread_mutexattr_init, pthread_mutexattr_settype, pthread_mutexattr_setpshared, pthread_mutexattr_destroy, pthread_mutex_init};
 use crate::error_types::MutexError;
 use crate::platform_traits::PlatformMutex;
 
