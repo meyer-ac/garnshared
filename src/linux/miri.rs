@@ -4,6 +4,7 @@
  * They do nothing!
  */
 
+// todo: provide actual mutex semantics for Miri
 cfg_if::cfg_if! {
     if #[cfg(miri)] {
         use nix::libc::{pthread_mutexattr_t, c_int};
