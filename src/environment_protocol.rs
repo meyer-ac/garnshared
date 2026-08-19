@@ -62,8 +62,8 @@ impl EnvironmentResponse {
 
         let mnemonic = &message[..MNEMONIC_LEN];
         match mnemonic {
-            OPEN_MUTEX_MNEMONIC => {
-                let second_lf = message[MNEMONIC_LEN+1..].find('\n');
+            OPEN_MUTEX_OK_MNEMONIC => {
+                let second_lf = message[MNEMONIC_LEN+1..].find('\n').map(|pos| pos + MNEMONIC_LEN+1);
                 if second_lf.is_none() {
                     return None;
                 }
@@ -71,8 +71,8 @@ impl EnvironmentResponse {
                 if first_null.is_none() {
                     return None;
                 }
-                let page = usize::from_str_radix(&message[MNEMONIC_LEN+1..second_lf.unwrap()], 10);
-                let offset = usize::from_str_radix(&message[second_lf.unwrap()+1..first_null.unwrap()], 10);
+                let page = message[MNEMONIC_LEN+1..second_lf.unwrap()].parse::<usize>();
+                let offset = message[second_lf.unwrap()+1..first_null.unwrap()].parse::<usize>();
                 if page.is_err() || offset.is_err() {
                     return None;
                 }

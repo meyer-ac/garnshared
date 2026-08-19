@@ -1,7 +1,6 @@
 use crate::error_types::MutexError;
 use crate::linux::miri::{pthread_mutex_destroy, pthread_mutex_init, pthread_mutex_lock, pthread_mutex_t, pthread_mutex_trylock, pthread_mutex_unlock, pthread_mutexattr_destroy, pthread_mutexattr_init, pthread_mutexattr_setpshared, pthread_mutexattr_settype};
 use crate::linux::traits::ShmSync;
-use crate::platform_traits::PlatformMutex;
 use nix::libc::{self, PTHREAD_MUTEX_ERRORCHECK, PTHREAD_PROCESS_SHARED};
 use std::cell::UnsafeCell;
 use std::marker::PhantomPinned;
@@ -10,7 +9,7 @@ use std::ptr;
 use hashed_type_def::{start_hash_fnv1a, HashedTypeDef};
 
 #[repr(transparent)]
-struct PthreadMutexT(pthread_mutex_t);
+pub struct PthreadMutexT(pthread_mutex_t);
 
 impl HashedTypeDef for PthreadMutexT {
     const TYPE_HASH_NATIVE: u128 = start_hash_fnv1a(b"libc::pthread_mutex_t");
@@ -19,7 +18,7 @@ impl HashedTypeDef for PthreadMutexT {
 #[repr(transparent)]
 #[derive(HashedTypeDef)]
 pub struct PthreadMutex {
-    mutex: UnsafeCell<PthreadMutexT>,
+    pub mutex: UnsafeCell<PthreadMutexT>,
     pin_: PhantomPinned
 }
 
@@ -64,32 +63,6 @@ impl PthreadMutex {
         }
 
         Ok(())
-    }
-}
-
-impl PlatformMutex for PthreadMutex {
-    fn lock(&self) -> Result<(), MutexError> {
-        match unsafe {pthread_mutex_lock(self.mutex.get() as *mut pthread_mutex_t)} {
-            0 => Ok(()),
-            libc::EDEADLK => Err(MutexError::NestedLockError),
-            _ => Err(MutexError::UnknownError)
-        }
-    }
-
-    fn unlock(&self) -> Result<(), MutexError> {
-        match unsafe {pthread_mutex_unlock(self.mutex.get() as *mut pthread_mutex_t)} {
-            0 => Ok(()),
-            libc::EPERM => Err(MutexError::UnauthorizedUnlockError),
-            _ => Err(MutexError::UnknownError)
-        }
-    }
-
-    fn try_lock(&self) -> Result<(), MutexError> {
-        match unsafe {pthread_mutex_trylock(self.mutex.get() as *mut pthread_mutex_t)} {
-            0 => Ok(()),
-            libc::EBUSY => Err(MutexError::TryLockError),
-            _ => Err(MutexError::UnknownError)
-        }
     }
 }
 
