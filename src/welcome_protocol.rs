@@ -15,15 +15,16 @@ impl WelcomeRequest {
     pub fn serialize(&self) -> Result<String, SerializeError> {
         match self {
             Self::OpenEnvironment(name) => {
-                if name.as_bytes().len() > MAX_NAME_LEN {
+                if name.len() > MAX_NAME_LEN {
                     Err(SerializeError::NameTooLongError)
                 } else {
-                    Ok(format!("{}\n{}", OPEN_ENVIRONMENT_MNEMONIC, name))
+                    Ok(format!("{OPEN_ENVIRONMENT_MNEMONIC}\n{name}"))
                 }
             },
         }
     }
 
+    #[must_use]
     pub fn deserialize(message: &str) -> Option<Self> {
         if message.len() < MNEMONIC_LEN {
             return None;
@@ -45,6 +46,7 @@ pub enum WelcomeResponse {
 }
 
 impl WelcomeResponse {
+    #[must_use]
     pub fn serialize(&self) -> String {
         match self {
             Self::OpenEnvironmentOk => OPEN_ENVIRONMENT_OK_MNEMONIC.to_owned(),
@@ -53,6 +55,7 @@ impl WelcomeResponse {
         }
     }
     
+    #[must_use]
     pub fn deserialize(message: &str) -> Option<Self> {
         if message.len() < MNEMONIC_LEN {
             return None;

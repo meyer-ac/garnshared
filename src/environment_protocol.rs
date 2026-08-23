@@ -1,7 +1,5 @@
-use uuid::Uuid;
 use crate::constants::{MNEMONIC_LEN, ENVIRONMENT_REQUEST_SIZE, MAX_NAME_LEN};
 use crate::error_types::SerializeError;
-use crate::welcome_protocol::WelcomeResponse;
 
 const OPEN_MUTEX_MNEMONIC: &str = "OPEN_MUT";
 
@@ -17,15 +15,16 @@ impl EnvironmentRequest {
     pub fn serialize(&self) -> Result<String, SerializeError> {
         match self {
             Self::OpenMutex(name) => {
-                if name.as_bytes().len() > MAX_NAME_LEN {
+                if name.len() > MAX_NAME_LEN {
                     Err(SerializeError::NameTooLongError)
                 } else {
-                    Ok(format!("{}\n{}", OPEN_MUTEX_MNEMONIC, name))
+                    Ok(format!("{OPEN_MUTEX_MNEMONIC}\n{name}"))
                 }
             },
         }
     }
     
+    #[must_use]
     pub fn deserialize(message: &str) -> Option<Self> {
         if message.len() < MNEMONIC_LEN {
             return None;
@@ -47,14 +46,16 @@ pub enum EnvironmentResponse {
 }
 
 impl EnvironmentResponse {
+    #[must_use]
     pub fn serialize(&self) -> String {
         match self {
-            Self::OpenMutexOk(page, offset) => format!("{}\n{}\n{}", OPEN_MUTEX_OK_MNEMONIC, page, offset),
+            Self::OpenMutexOk(page, offset) => format!("{OPEN_MUTEX_OK_MNEMONIC}\n{page}\n{offset}"),
             Self::MalformedRequest => MALFORMED_REQUEST_MNEMONIC.to_owned(),
             Self::InternalError => INTERNAL_ERROR_MNEMONIC.to_owned(),
         }
     }
 
+    #[must_use]
     pub fn deserialize(message: &str) -> Option<Self> {
         if message.len() < MNEMONIC_LEN {
             return None;
@@ -63,20 +64,11 @@ impl EnvironmentResponse {
         let mnemonic = &message[..MNEMONIC_LEN];
         match mnemonic {
             OPEN_MUTEX_OK_MNEMONIC => {
-                let second_lf = message[MNEMONIC_LEN+1..].find('\n').map(|pos| pos + MNEMONIC_LEN+1);
-                if second_lf.is_none() {
-                    return None;
-                }
-                let first_null = message.find('\0');
-                if first_null.is_none() {
-                    return None;
-                }
-                let page = message[MNEMONIC_LEN+1..second_lf.unwrap()].parse::<usize>();
-                let offset = message[second_lf.unwrap()+1..first_null.unwrap()].parse::<usize>();
-                if page.is_err() || offset.is_err() {
-                    return None;
-                }
-                Some(Self::OpenMutexOk(page.unwrap(), offset.unwrap()))
+                let second_lf = message[MNEMONIC_LEN+1..].find('\n').map(|pos| pos + MNEMONIC_LEN+1)?;
+                let first_null = message.find('\0')?;
+                let page = message[MNEMONIC_LEN+1..second_lf].parse::<usize>().ok()?;
+                let offset = message[second_lf+1..first_null].parse::<usize>().ok()?;
+                Some(Self::OpenMutexOk(page, offset))
             }
             MALFORMED_REQUEST_MNEMONIC => Some(Self::MalformedRequest),
             INTERNAL_ERROR_MNEMONIC => Some(Self::InternalError),
