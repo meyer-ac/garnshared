@@ -1,5 +1,5 @@
 use crate::linux::miri::{pthread_mutex_destroy, pthread_mutex_init, pthread_mutex_t, pthread_mutexattr_destroy, pthread_mutexattr_init, pthread_mutexattr_setpshared, pthread_mutexattr_settype};
-use crate::linux::traits::ShmSync;
+use crate::linux::traits::ShmCompatible;
 use nix::libc::{PTHREAD_MUTEX_ERRORCHECK, PTHREAD_PROCESS_SHARED};
 use std::cell::UnsafeCell;
 use std::marker::PhantomPinned;
@@ -7,6 +7,7 @@ use std::mem::MaybeUninit;
 use std::ptr;
 use hashed_type_def::{start_hash_fnv1a, HashedTypeDef};
 use nix::errno::Errno;
+use crate::error_types::SendableError;
 
 #[repr(transparent)]
 pub struct PthreadMutexT(pthread_mutex_t);
@@ -29,23 +30,23 @@ impl PthreadMutex {
     /// * there must not be concurrent access to `dest` during the call
     /// * `dest` stays at the same memory location and remains valid for the whole program execution
     /// * on `Err`, the caller must treat dest as uninitialized.
-    pub unsafe fn init(dest: *mut MaybeUninit<Self>) -> Result<(), Errno> {
+    pub unsafe fn init(dest: *mut MaybeUninit<Self>) -> Result<(), SendableError> {
         let mut attr = MaybeUninit::uninit();
         // SAFETY: MaybeUninit guarantees validity, writeability, size and align of attr
         if unsafe {pthread_mutexattr_init(attr.as_mut_ptr())} != 0 {
-            return Err(Errno::last());
+            return Err(Box::new(Errno::last()));
         }
         // SAFETY: the last return guarantees that attr is correctly initialized
         if unsafe {pthread_mutexattr_settype(attr.as_mut_ptr(), PTHREAD_MUTEX_ERRORCHECK)} != 0 {
             // SAFETY: see above
             unsafe {pthread_mutexattr_destroy(attr.as_mut_ptr());}
-            return Err(Errno::last());
+            return Err(Box::new(Errno::last()));
         }
         // SAFETY: see above
         if unsafe {pthread_mutexattr_setpshared(attr.as_mut_ptr(), PTHREAD_PROCESS_SHARED)} != 0 {
             // SAFETY: see above
             unsafe {pthread_mutexattr_destroy(attr.as_mut_ptr());}
-            return Err(Errno::last());
+            return Err(Box::new(Errno::last()));
         }
 
         let dest = dest as *mut Self;
@@ -59,7 +60,7 @@ impl PthreadMutex {
         // SAFETY: attr is still alive
         unsafe {pthread_mutexattr_destroy(attr.as_mut_ptr());}
         if status != 0 {
-            return Err(Errno::last());
+            return Err(Box::new(Errno::last()));
         }
 
         Ok(())
@@ -75,4 +76,4 @@ impl Drop for PthreadMutex {
 
 unsafe impl Sync for PthreadMutex {}
 
-unsafe impl ShmSync for PthreadMutex {}
+unsafe impl ShmCompatible for PthreadMutex {}
