@@ -3,6 +3,7 @@ use nix::libc::{pthread_mutex_t, PTHREAD_MUTEX_ERRORCHECK, PTHREAD_PROCESS_SHARE
 use std::cell::UnsafeCell;
 use std::marker::PhantomPinned;
 use std::mem::MaybeUninit;
+use std::pin::Pin;
 use std::ptr;
 use hashed_type_def::{start_hash_fnv1a, HashedTypeDef};
 use nix::errno::Errno;
@@ -19,17 +20,14 @@ impl HashedTypeDef for PthreadMutexT {
 #[derive(HashedTypeDef)]
 pub struct PthreadMutex {
     pub mutex: UnsafeCell<PthreadMutexT>,
-    pin_: PhantomPinned
+    _pin: PhantomPinned
 }
 
 impl PthreadMutex {
+    // todo: unsafe still necessary?
     /// # Safety
-    /// All the following invariants must be satisfied:
-    /// * `dest` must be valid for reads and writes as well as correctly aligned and large enough for `PthreadMutex`
-    /// * there must not be concurrent access to `dest` during the call
-    /// * `dest` stays at the same memory location and remains valid for the whole program execution
     /// * on `Err`, the caller must treat dest as uninitialized.
-    pub unsafe fn init(dest: *mut MaybeUninit<Self>) -> Result<(), SendableError> {
+    pub unsafe fn init(dest: Pin<&mut MaybeUninit<Self>>) -> Result<(), SendableError> {
         let mut attr = MaybeUninit::uninit();
         // SAFETY: MaybeUninit guarantees validity, writeability, size and align of attr
         if unsafe {pthread_mutexattr_init(attr.as_mut_ptr())} != 0 {
@@ -47,8 +45,10 @@ impl PthreadMutex {
             unsafe {pthread_mutexattr_destroy(attr.as_mut_ptr());}
             return Err(Box::new(Errno::last()));
         }
-
-        let dest = dest.cast::<Self>();
+        
+        // SAFETY: The pinned value won't move as it isn't moved inside this function and the
+        // pointer is discarded upon returning
+        let dest = unsafe {dest.get_unchecked_mut()}.as_mut_ptr().cast::<Self>();
         // SAFETY: dest is still valid, large enough and aligned
         // We only dereference to obtain a pointer to the mutex field, not to
         // access the uninitialized memory.

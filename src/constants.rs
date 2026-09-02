@@ -10,6 +10,5 @@ cfg_if::cfg_if! {
         pub const WORKING_DIR: &str = "/run/garnd";
         pub const ABSTRACT_SOCK_NAME_PREFIX: &str = "garnd:";
         pub const WELCOME_SOCK_ABSTRACT_NAME: &str = "welcome";
-        #[cfg(miri)] pub const PAGE_SIZE: usize = 4096;
     }
 }
