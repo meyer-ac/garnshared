@@ -24,7 +24,7 @@ pub struct PthreadMutex {
 }
 
 impl PthreadMutex {
-    /// # Safety
+    /// # Note
     /// * on `Err`, the caller must treat dest as uninitialized.
     pub fn init(dest: Pin<&mut MaybeUninit<Self>>) -> Result<(), SendableError> {
         let mut attr = MaybeUninit::uninit();
