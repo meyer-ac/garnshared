@@ -24,10 +24,9 @@ pub struct PthreadMutex {
 }
 
 impl PthreadMutex {
-    // todo: unsafe still necessary?
     /// # Safety
     /// * on `Err`, the caller must treat dest as uninitialized.
-    pub unsafe fn init(dest: Pin<&mut MaybeUninit<Self>>) -> Result<(), SendableError> {
+    pub fn init(dest: Pin<&mut MaybeUninit<Self>>) -> Result<(), SendableError> {
         let mut attr = MaybeUninit::uninit();
         // SAFETY: MaybeUninit guarantees validity, writeability, size and align of attr
         if unsafe {pthread_mutexattr_init(attr.as_mut_ptr())} != 0 {

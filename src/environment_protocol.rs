@@ -1,3 +1,9 @@
+/// The protocol a client uses to communicate with an opened environment.
+/// An environment does not expose itself as a state machine to the outside world, i.e. there is no
+/// way of inferring the internal state of an environment through use of this protocol.
+/// Hence, it is perfectly safe for a client connection to unexpectedly break down and in turn for
+/// requests and responses to get lost.
+
 use crate::constants::{MNEMONIC_LEN, ENVIRONMENT_REQUEST_SIZE, MAX_NAME_LEN};
 use crate::error_types::SerializeError;
 
