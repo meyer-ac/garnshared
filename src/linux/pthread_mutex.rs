@@ -24,6 +24,10 @@ pub struct PthreadMutex {
 }
 
 impl PthreadMutex {
+    // todo: decide whether the mutex should be robust or not or if the user should choose
+    // robust (or letting the user choose) would be better for debugging purposes,
+    // non-robust would be better for educational purposes
+
     /// # Note
     /// * on `Err`, the caller must treat dest as uninitialized.
     pub fn init(dest: Pin<&mut MaybeUninit<Self>>) -> Result<(), SendableError> {
