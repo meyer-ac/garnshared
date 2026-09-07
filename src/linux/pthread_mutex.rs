@@ -16,6 +16,8 @@ impl HashedTypeDef for PthreadMutexT {
     const TYPE_HASH_NATIVE: u128 = start_hash_fnv1a(b"libc::pthread_mutex_t");
 }
 
+/// This type provides a scaffolding and is meant to be specialized in the `libgarn` crate, i.e.
+/// be equipped with the necessary interface.
 #[repr(transparent)]
 #[derive(HashedTypeDef)]
 pub struct PthreadMutex {
