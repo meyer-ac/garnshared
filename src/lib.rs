@@ -11,6 +11,7 @@ pub mod welcome_protocol;
 pub mod environment_protocol;
 pub mod constants;
 pub mod util;
+pub mod message_parser;
 
 cfg_if::cfg_if! {
     if #[cfg(target_os = "linux")] {
