@@ -28,6 +28,10 @@ pub enum MessageProtocolError {
         message: String,
         mnemonic_len: usize,
     },
+    CharacterCrossesMnemonicBoundary {
+        message: String,
+        mnemonic_len: usize,
+    },
     ExpectedEndOfMessage {
         message: String,
         mnemonic: String,
@@ -88,6 +92,10 @@ impl Display for MessageProtocolError {
                 "message \"{message}\" (length: {}) is too short to store a mnemonic of length {mnemonic_len}",
                 message.len()
             ),
+            MessageProtocolError::CharacterCrossesMnemonicBoundary {
+                message,
+                mnemonic_len
+            } => write!(f, "a character must not cross the mnemonic boundary between byte {mnemonic_len} and byte {} in the message \"{message}\"", mnemonic_len + 1),
             MessageProtocolError::ExpectedEndOfMessage { message, mnemonic } => write!(
                 f,
                 "expected end of message after \"{mnemonic}\" in message \"{message}\""
@@ -226,6 +234,9 @@ impl MessageProtocol {
                 message: message.to_owned(),
                 mnemonic_len: self.mnemonic_len,
             });
+        }
+        if !message.is_char_boundary(self.mnemonic_len) {
+            return Err(MessageProtocolError::CharacterCrossesMnemonicBoundary {message: message.to_owned(), mnemonic_len: self.mnemonic_len});
         }
         let mnemonic = &message[..self.mnemonic_len];
         let Some(args_lengths) = self.mnemonic_args_map.get(mnemonic) else {
