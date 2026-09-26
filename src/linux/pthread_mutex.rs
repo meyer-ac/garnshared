@@ -1,5 +1,5 @@
 use crate::linux::traits::ShmCompatible;
-use nix::libc::{pthread_mutex_t, PTHREAD_MUTEX_ERRORCHECK, PTHREAD_PROCESS_SHARED, pthread_mutexattr_init, pthread_mutexattr_settype, pthread_mutexattr_destroy, pthread_mutexattr_setpshared, pthread_mutex_init, pthread_mutex_destroy};
+use nix::libc::{pthread_mutex_t, PTHREAD_MUTEX_ERRORCHECK, PTHREAD_PROCESS_SHARED, pthread_mutexattr_init, pthread_mutexattr_settype, pthread_mutexattr_destroy, pthread_mutexattr_setpshared, pthread_mutex_init, pthread_mutex_destroy, pthread_mutexattr_setrobust, PTHREAD_MUTEX_ROBUST};
 use std::cell::UnsafeCell;
 use std::marker::PhantomPinned;
 use std::mem::MaybeUninit;
@@ -26,10 +26,6 @@ pub struct PthreadMutex {
 }
 
 impl PthreadMutex {
-    // todo: decide whether the mutex should be robust or not or if the user should choose
-    // robust (or letting the user choose) would be better for debugging purposes,
-    // non-robust would be better for educational purposes
-
     /// # Note
     /// * on `Err`, the caller must treat dest as uninitialized.
     pub fn init(dest: Pin<&mut MaybeUninit<Self>>) -> Result<(), SendableError> {
@@ -50,7 +46,13 @@ impl PthreadMutex {
             unsafe {pthread_mutexattr_destroy(attr.as_mut_ptr());}
             return Err(Box::new(Errno::last()));
         }
-        
+        // SAFETY: see above
+        if unsafe {pthread_mutexattr_setrobust(attr.as_mut_ptr(), PTHREAD_MUTEX_ROBUST)} != 0 {
+            // SAFETY: see above
+            unsafe {pthread_mutexattr_destroy(attr.as_mut_ptr());}
+            return Err(Box::new(Errno::last()));
+        }
+
         // SAFETY: The pinned value won't move as it isn't moved inside this function and the
         // pointer is discarded upon returning
         let dest = unsafe {dest.get_unchecked_mut()}.as_mut_ptr().cast::<Self>();
