@@ -160,7 +160,7 @@ pub struct MessageProtocol {
 }
 
 impl MessageProtocol {
-    pub fn new(
+    pub(crate) fn new(
         mnemonic_len: usize,
         mnemonic_args_map: HashMap<&'static str, Box<[usize]>>,
     ) -> Result<MessageProtocol, MessageProtocolError> {
@@ -182,7 +182,7 @@ impl MessageProtocol {
     }
 
     #[must_use]
-    pub fn get_max_size(&self) -> usize {
+    pub fn max_size(&self) -> usize {
         self.mnemonic_args_map
             .values()
             .map(
@@ -194,7 +194,7 @@ impl MessageProtocol {
             + 1 /* terminating NULL */
     }
 
-    pub fn serialize(
+    pub(crate) fn serialize(
         &self,
         mnemonic: &'static str,
         args: &[&str],
@@ -228,7 +228,9 @@ impl MessageProtocol {
         Ok(s)
     }
 
-    pub fn deserialize(&self, message: &str) -> Result<Deserialization, MessageProtocolError> {
+    pub(crate) fn deserialize(&self, message: &str) -> Result<Deserialization, MessageProtocolError> {
+        let null_position = message.find('\0').ok_or(MessageProtocolError::NoNullCharacterFound {message: message.to_owned()})?;
+        let message = &message[..null_position];
         if message.len() < self.mnemonic_len {
             return Err(MessageProtocolError::MessageTooShort {
                 message: message.to_owned(),
@@ -256,8 +258,6 @@ impl MessageProtocol {
                 args: Box::new([]),
             });
         }
-        let null_position = message.find('\0').ok_or(MessageProtocolError::NoNullCharacterFound {message: message.to_owned()})?;
-        let message = &message[..null_position];
         let mut delimiter_positions = message
             .match_indices('\n')
             .map(|(i, _)| i)

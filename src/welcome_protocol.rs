@@ -9,7 +9,7 @@ const OPEN_ENVIRONMENT_OK_MNEMONIC: &str = "OPENV_OK";
 const MALFORMED_REQUEST_MNEMONIC: &str = "MALFORMD";
 const INTERNAL_ERROR_MNEMONIC: &str = "INTRNERR";
 
-static WELCOME_REQUEST_PROTOCOL: LazyLock<MessageProtocol> = LazyLock::new(
+pub static WELCOME_REQUEST_PROTOCOL: LazyLock<MessageProtocol> = LazyLock::new(
     || {
         MessageProtocol::new(
             MNEMONIC_LEN,
@@ -19,7 +19,7 @@ static WELCOME_REQUEST_PROTOCOL: LazyLock<MessageProtocol> = LazyLock::new(
     }, /* If something goes wrong here, it is a configuration error in the source code; it should panic. */
 );
 
-static WELCOME_RESPONSE_PROTOCOL: LazyLock<MessageProtocol> = LazyLock::new(
+pub static WELCOME_RESPONSE_PROTOCOL: LazyLock<MessageProtocol> = LazyLock::new(
     || {
         MessageProtocol::new(
             MNEMONIC_LEN,
