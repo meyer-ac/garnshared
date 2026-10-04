@@ -12,7 +12,7 @@ use std::marker::PhantomPinned;
 use std::mem::MaybeUninit;
 use std::pin::Pin;
 use std::ptr;
-use crate::pthread_result;
+use crate::pthread_result_detailed;
 
 #[repr(transparent)]
 pub struct PthreadMutexT(pthread_mutex_t);
@@ -36,9 +36,9 @@ impl PthreadMutex {
     pub fn init(dest: Pin<&mut MaybeUninit<Self>>) -> Result<(), DetailedError> {
         let mut attr = MaybeUninit::uninit();
         // SAFETY: MaybeUninit guarantees validity, writeability, size and align of attr
-        pthread_result!(unsafe {pthread_mutexattr_init(attr.as_mut_ptr())})?;
+        pthread_result_detailed!(unsafe {pthread_mutexattr_init(attr.as_mut_ptr())})?;
         // SAFETY: the last return guarantees that attr is correctly initialized
-        if let Err(e) =  pthread_result!(unsafe { pthread_mutexattr_settype(attr.as_mut_ptr(), PTHREAD_MUTEX_ERRORCHECK) }) {
+        if let Err(e) =  pthread_result_detailed!(unsafe { pthread_mutexattr_settype(attr.as_mut_ptr(), PTHREAD_MUTEX_ERRORCHECK) }) {
             // SAFETY: see above
             unsafe {
                 let _ = pthread_mutexattr_destroy(attr.as_mut_ptr());
@@ -46,7 +46,7 @@ impl PthreadMutex {
             return Err(e);
         }
         // SAFETY: see above
-        if let Err(e) = pthread_result!(unsafe { pthread_mutexattr_setpshared(attr.as_mut_ptr(), PTHREAD_PROCESS_SHARED) }) {
+        if let Err(e) = pthread_result_detailed!(unsafe { pthread_mutexattr_setpshared(attr.as_mut_ptr(), PTHREAD_PROCESS_SHARED) }) {
             // SAFETY: see above
             unsafe {
                 let _ = pthread_mutexattr_destroy(attr.as_mut_ptr());
@@ -54,7 +54,7 @@ impl PthreadMutex {
             return Err(e);
         }
         // SAFETY: see above
-        if let Err(e) =  pthread_result!(unsafe { pthread_mutexattr_setrobust(attr.as_mut_ptr(), PTHREAD_MUTEX_ROBUST) }) {
+        if let Err(e) =  pthread_result_detailed!(unsafe { pthread_mutexattr_setrobust(attr.as_mut_ptr(), PTHREAD_MUTEX_ROBUST) }) {
             // SAFETY: see above
             unsafe {
                 let _ = pthread_mutexattr_destroy(attr.as_mut_ptr());
@@ -73,7 +73,7 @@ impl PthreadMutex {
         let mutex_ptr = unsafe { ptr::addr_of_mut!((*dest).mutex) }.cast::<pthread_mutex_t>();
         // SAFETY: mutex_ptr is valid, writeable, large enough, aligned and uninitialized
         // attr is still alive
-        let init_result = pthread_result!(unsafe { pthread_mutex_init(mutex_ptr, attr.as_ptr()) });
+        let init_result = pthread_result_detailed!(unsafe { pthread_mutex_init(mutex_ptr, attr.as_ptr()) });
         // SAFETY: attr is still alive
         unsafe {
             // Doesn't really matter if this fails, the mutex is already up and running
@@ -85,7 +85,7 @@ impl PthreadMutex {
 
 impl Drop for PthreadMutex {
     fn drop(&mut self) {
-        let result = pthread_result!(unsafe { pthread_mutex_destroy(self.mutex.get().cast::<pthread_mutex_t>()) });
+        let result = pthread_result_detailed!(unsafe { pthread_mutex_destroy(self.mutex.get().cast::<pthread_mutex_t>()) });
         debug_assert_matches!(result, Ok(()), "pthread_mutex_destroy() failed");
     }
 }

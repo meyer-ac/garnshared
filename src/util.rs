@@ -8,13 +8,22 @@ pub fn try_extract_error_message(payload: &(dyn std::any::Any + Send)) -> String
 }
 
 #[macro_export]
-macro_rules! pthread_result {
+macro_rules! pthread_result_errno {
     ($expr:expr) => {
         match $expr {
             0 => ::std::result::Result::Ok(()),
-            e => ::std::result::Result::Err($crate::error_types::DetailedError::add_metadata(
-                ::nix::errno::Errno::from_raw(e),
-            )),
+            e => ::std::result::Result::Err(::nix::errno::Errno::from_raw(e)),
         }
     };
 }
+
+#[macro_export]
+macro_rules! pthread_result_detailed {
+    ($expr:expr) => {
+        <_ as $crate::error_types::ResultMetadata<()>>::add_metadata(
+            $crate::util::pthread_result_errno!($expr),
+        )
+    };
+}
+
+pub use {pthread_result_errno, pthread_result_detailed};
