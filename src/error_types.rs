@@ -11,6 +11,7 @@ pub struct DetailedError {
 }
 
 impl DetailedError {
+    #[must_use]
     pub fn new(
         file: &'static str,
         line: u32,
@@ -25,8 +26,9 @@ impl DetailedError {
         }
     }
 
-    pub fn error(&self) -> &Box<dyn Error + Send + Sync> {
-        &self.error
+    #[must_use]
+    pub fn error(&self) -> &(dyn Error + Send + Sync + 'static) {
+        &*self.error
     }
 
     #[track_caller]
