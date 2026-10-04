@@ -7,7 +7,8 @@ use std::pin::Pin;
 use std::ptr;
 use hashed_type_def::{start_hash_fnv1a, HashedTypeDef};
 use nix::errno::Errno;
-use crate::error_types::SendableError;
+use crate::add_metadata_to_error;
+use crate::error_types::SendableErrorWithMetadata;
 
 #[repr(transparent)]
 pub struct PthreadMutexT(pthread_mutex_t);
@@ -28,29 +29,29 @@ pub struct PthreadMutex {
 impl PthreadMutex {
     /// # Note
     /// * on `Err`, the caller must treat dest as uninitialized.
-    pub fn init(dest: Pin<&mut MaybeUninit<Self>>) -> Result<(), SendableError> {
+    pub fn init(dest: Pin<&mut MaybeUninit<Self>>) -> Result<(), SendableErrorWithMetadata> {
         let mut attr = MaybeUninit::uninit();
         // SAFETY: MaybeUninit guarantees validity, writeability, size and align of attr
         if unsafe {pthread_mutexattr_init(attr.as_mut_ptr())} != 0 {
-            return Err(Box::new(Errno::last()));
+            return Err(add_metadata_to_error!(Errno::last()));
         }
         // SAFETY: the last return guarantees that attr is correctly initialized
         if unsafe {pthread_mutexattr_settype(attr.as_mut_ptr(), PTHREAD_MUTEX_ERRORCHECK)} != 0 {
             // SAFETY: see above
             unsafe {pthread_mutexattr_destroy(attr.as_mut_ptr());}
-            return Err(Box::new(Errno::last()));
+            return Err(add_metadata_to_error!(Errno::last()));
         }
         // SAFETY: see above
         if unsafe {pthread_mutexattr_setpshared(attr.as_mut_ptr(), PTHREAD_PROCESS_SHARED)} != 0 {
             // SAFETY: see above
             unsafe {pthread_mutexattr_destroy(attr.as_mut_ptr());}
-            return Err(Box::new(Errno::last()));
+            return Err(add_metadata_to_error!(Errno::last()));
         }
         // SAFETY: see above
         if unsafe {pthread_mutexattr_setrobust(attr.as_mut_ptr(), PTHREAD_MUTEX_ROBUST)} != 0 {
             // SAFETY: see above
             unsafe {pthread_mutexattr_destroy(attr.as_mut_ptr());}
-            return Err(Box::new(Errno::last()));
+            return Err(add_metadata_to_error!(Errno::last()));
         }
 
         // SAFETY: The pinned value won't move as it isn't moved inside this function and the
@@ -66,7 +67,7 @@ impl PthreadMutex {
         // SAFETY: attr is still alive
         unsafe {pthread_mutexattr_destroy(attr.as_mut_ptr());}
         if status != 0 {
-            return Err(Box::new(Errno::last()));
+            return Err(add_metadata_to_error!(Errno::last()));
         }
 
         Ok(())
