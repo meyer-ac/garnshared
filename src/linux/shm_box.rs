@@ -19,6 +19,7 @@ use crate::constants;
 use crate::error_types::{DetailedError, ResultMetadata};
 use crate::linux::traits::ShmCompatible;
 use crate::linux::shared_mapping::{SharedMapping, SharedMappingError};
+use crate::util::lcm;
 
 #[derive(Debug)]
 pub enum ShmBoxError {
@@ -77,27 +78,13 @@ impl<T: ShmCompatible, const CACHE_LINE_PAIR_SIZE: usize> ShmBox<T, CACHE_LINE_P
         Uuid::from_u128(uuid)
     }
 
-    const fn gcd(mut a: usize, mut b: usize) -> usize {
-        while b != 0 {
-            let t = b;
-            b = a % b;
-            a = t;
-        }
-        a
-    }
-
-    const fn lcm(a: NonZero<usize>, b: NonZero<usize>) -> NonZero<usize> {
-        // Unwrap: LCM can't be zero because `a` and `b` are non-zero
-        NonZero::new((a.get() / Self::gcd(a.get(), b.get())) * b.get()).unwrap()
-    }
-
     const T_ALIGNMENT: NonZero<usize> = {
         if CACHE_LINE_PAIR_SIZE == 0 {
             // alignment is at least 1
             NonZero::new(align_of::<T>()).unwrap()
         } else {
             // alignment is at least 1, `CACHE_LINE_PAIR_SIZE` is not zero (see above)
-            Self::lcm(NonZero::new(align_of::<T>()).unwrap(), NonZero::new(CACHE_LINE_PAIR_SIZE).unwrap())
+            lcm(NonZero::new(align_of::<T>()).unwrap(), NonZero::new(CACHE_LINE_PAIR_SIZE).unwrap())
         }
     };
 

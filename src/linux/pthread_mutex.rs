@@ -94,3 +94,5 @@ impl Drop for PthreadMutex {
 unsafe impl Sync for PthreadMutex {}
 
 unsafe impl ShmCompatible for PthreadMutex {}
+
+// todo: !Unpin
