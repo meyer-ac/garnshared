@@ -33,7 +33,7 @@ pub struct PthreadMutex {
 impl PthreadMutex {
     /// # Note
     /// * on `Err`, the caller must treat dest as uninitialized.
-    pub fn init(dest: Pin<&mut MaybeUninit<Self>>) -> Result<(), DetailedError> {
+    pub fn init(dest: Pin<&mut MaybeUninit<Self>>) -> Result<&Self, DetailedError> {
         let mut attr = MaybeUninit::uninit();
         // SAFETY: MaybeUninit guarantees validity, writeability, size and align of attr
         pthread_result_detailed!(unsafe {pthread_mutexattr_init(attr.as_mut_ptr())})?;
@@ -71,9 +71,10 @@ impl PthreadMutex {
         // We only dereference to obtain a pointer to the mutex field, not to
         // access the uninitialized memory.
         let mutex_ptr = unsafe { ptr::addr_of_mut!((*dest).mutex) }.cast::<pthread_mutex_t>();
-        // SAFETY: mutex_ptr is valid, writeable, large enough, aligned and uninitialized
-        // attr is still alive
-        let init_result = pthread_result_detailed!(unsafe { pthread_mutex_init(mutex_ptr, attr.as_ptr()) });
+        // SAFETY: pthread_mutex_init: mutex_ptr is valid, writeable, large enough, aligned and uninitialized
+        //     attr is still alive
+        // as_ref_unchecked: Initialization was successful
+        let init_result = pthread_result_detailed!(unsafe { pthread_mutex_init(mutex_ptr, attr.as_ptr()) }).map(|()| unsafe { dest.as_ref_unchecked() });
         // SAFETY: attr is still alive
         unsafe {
             // Doesn't really matter if this fails, the mutex is already up and running

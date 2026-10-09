@@ -5,6 +5,7 @@
     //clippy::nursery,
     //clippy::cargo
 )]
+extern crate core;
 
 pub mod error_types;
 pub mod welcome_protocol;

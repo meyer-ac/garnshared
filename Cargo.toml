@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-nix = { version = "0.31.3", features = ["mman", "fs", "feature"] }
+nix = { version = "0.31.3", features = ["mman", "fs", "feature", "process"] }
 cfg-if = "1.0.4"
 hashed-type-def = { version = "0.1.2", features = ["derive"] }
 uuid = { version = "1.24.1", features = ["v4"] }
