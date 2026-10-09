@@ -5,7 +5,7 @@ use std::marker::PhantomData;
 use std::mem::MaybeUninit;
 use std::num::NonZero;
 use std::ops::Deref;
-use std::os::fd::{AsFd, FromRawFd, OwnedFd, RawFd};
+use std::os::fd::{AsFd, OwnedFd};
 use std::pin::Pin;
 use std::{mem, ptr};
 use std::ptr::NonNull;
@@ -47,7 +47,7 @@ impl Display for ShmBoxError {
                 write!(f, "The opened ShmBox holds another type than that requested.")
             }
             Self::MappingMemoryFailed(e) => {
-                write!(f, "Failed to map the file into memory: {}", e)
+                write!(f, "Failed to map the file into memory: {e}")
             }
         }
     }
@@ -246,7 +246,7 @@ impl<T: ShmCompatible, const CACHE_LINE_PAIR_SIZE: usize> ShmBox<T, CACHE_LINE_P
     /// to `ShmBox::from_fd` or converting it to a `RawFd` and sending it over a socket as auxiliary
     /// data.
     pub unsafe fn generate_fd(&self) -> Result<OwnedFd, DetailedError> {
-        self.mapping.try_clone_fd().add_metadata()
+        self.mapping.as_fd().try_clone_to_owned().add_metadata()
     }
 }
 

@@ -5,9 +5,8 @@ use nix::sys::stat::fstat;
 use std::error::Error;
 use std::ffi::c_void;
 use std::fmt::Display;
-use std::io;
 use std::num::NonZero;
-use std::os::fd::{AsFd, OwnedFd};
+use std::os::fd::{AsFd, BorrowedFd, OwnedFd};
 use std::ptr::NonNull;
 
 #[derive(Debug)]
@@ -35,13 +34,13 @@ impl Display for SharedMappingError {
                 )
             }
             Self::GetFileSealsFailed(e) => {
-                write!(f, "Failed to get file seals with errno {}", e)
+                write!(f, "Failed to get file seals with errno {e}")
             }
             Self::GetFileStatsFailed(e) => {
-                write!(f, "Failed to get file stats with errno {}", e)
+                write!(f, "Failed to get file stats with errno {e}")
             }
             Self::MapMemoryFailed(e) => {
-                write!(f, "Failed to map the file into memory with errno {}", e)
+                write!(f, "Failed to map the file into memory with errno {e}")
             }
         }
     }
@@ -95,12 +94,15 @@ impl SharedMapping {
         Ok(SharedMapping { ptr, size, fd })
     }
 
+    #[must_use]
     pub fn as_ptr(&self) -> NonNull<c_void> {
         self.ptr
     }
+}
 
-    pub fn try_clone_fd(&self) -> Result<OwnedFd, io::Error> {
-        self.fd.try_clone()
+impl AsFd for SharedMapping {
+    fn as_fd(&self) -> BorrowedFd<'_> {
+        self.fd.as_fd()
     }
 }
 
