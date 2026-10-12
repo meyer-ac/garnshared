@@ -54,6 +54,8 @@ pub static ENVIRONMENT_RESPONSE_PROTOCOL: LazyLock<MessageProtocol> = LazyLock::
 
 pub enum EnvironmentRequest {
     OpenMutex(String),
+    RegisterThread(String),
+    UnregisterThread(String),
 }
 
 impl EnvironmentRequest {
@@ -62,6 +64,12 @@ impl EnvironmentRequest {
             Self::OpenMutex(name) => {
                 ENVIRONMENT_REQUEST_PROTOCOL.serialize(OPEN_MUTEX_MNEMONIC, &[name])
             }
+            Self::RegisterThread(name) => {
+                ENVIRONMENT_REQUEST_PROTOCOL.serialize(REGISTER_THREAD_MNEMONIC, &[name])
+            }
+            Self::UnregisterThread(name) => {
+                ENVIRONMENT_REQUEST_PROTOCOL.serialize(UNREGISTER_THREAD_MNEMONIC, &[name])
+            }
         }
     }
 
@@ -69,6 +77,8 @@ impl EnvironmentRequest {
         let deserialization = ENVIRONMENT_REQUEST_PROTOCOL.deserialize(message)?;
         match deserialization.mnemonic() {
             OPEN_MUTEX_MNEMONIC => Ok(Self::OpenMutex(deserialization.args()[0].clone())),
+            REGISTER_THREAD_MNEMONIC => Ok(Self::RegisterThread(deserialization.args()[0].clone())),
+            UNREGISTER_THREAD_MNEMONIC => Ok(Self::UnregisterThread(deserialization.args()[0].clone())),
             _ => unreachable!(),
         }
     }
