@@ -8,6 +8,12 @@ use std::mem::MaybeUninit;
 use std::pin::Pin;
 use std::ptr;
 use std::rc::Rc;
+use hashed_type_def::{start_hash_fnv1a, HashedTypeDef};
+use crate::linux::traits::ShmCompatible;
+
+impl HashedTypeDef for ck::ck_ring_t {
+    const TYPE_HASH_NATIVE: u128 = start_hash_fnv1a(b"ck::ck_ring_t");
+}
 
 #[derive(Debug)]
 pub enum ShareableSpscRingBufferError {
@@ -93,6 +99,7 @@ impl Error for ShareableSpscRingBufferError {}
 /// - `CACHE_LINE_PAIR_SIZE` must be a multiple of `align_of::<UnsafeCell<ck::ck_ring_t>>()`
 /// - `CACHE_LINE_PAIR_SIZE` must be a multiple of `align_of::<usize>()`
 #[repr(C)]
+#[derive(HashedTypeDef)]
 pub struct ShareableSpscRingBuffer<const SIZE: usize, const CACHE_LINE_PAIR_SIZE: usize> {
     ring: UnsafeCell<ck::ck_ring_t>,
     _mem0: UnsafeCell<[u8; CACHE_LINE_PAIR_SIZE]>,
@@ -215,3 +222,7 @@ impl<const SIZE: usize, const CACHE_LINE_PAIR_SIZE: usize>
         }
     }
 }
+
+unsafe impl<const SIZE: usize, const CACHE_LINE_PAIR_SIZE: usize> Sync for ShareableSpscRingBuffer<SIZE, CACHE_LINE_PAIR_SIZE> {}
+
+unsafe impl<const SIZE: usize, const CACHE_LINE_PAIR_SIZE: usize> ShmCompatible for ShareableSpscRingBuffer<SIZE, CACHE_LINE_PAIR_SIZE> {}
