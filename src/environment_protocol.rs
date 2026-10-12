@@ -14,6 +14,7 @@ const REGISTER_THREAD_MNEMONIC: &str = "THRD_NEW";
 const UNREGISTER_THREAD_MNEMONIC: &str = "THRD_BYE";
 
 const OPEN_MUTEX_OK_MNEMONIC: &str = "OPMUT_OK";
+const REGISTER_THREAD_OK_MNEMONIC: &str = "THNEW_OK";
 const MALFORMED_REQUEST_MNEMONIC: &str = "MALFORMD";
 const INTERNAL_ERROR_MNEMONIC: &str = "INTRNERR";
 
@@ -44,6 +45,7 @@ pub static ENVIRONMENT_RESPONSE_PROTOCOL: LazyLock<MessageProtocol> = LazyLock::
                     ]
                     .into_boxed_slice(),
                 ),
+                (REGISTER_THREAD_OK_MNEMONIC, vec![].into_boxed_slice()),
                 (MALFORMED_REQUEST_MNEMONIC, vec![].into_boxed_slice()),
                 (INTERNAL_ERROR_MNEMONIC, vec![].into_boxed_slice()),
             ]),
@@ -86,6 +88,7 @@ impl EnvironmentRequest {
 
 pub enum EnvironmentResponse {
     OpenMutexOk(usize, usize),
+    RegisterThreadOk,
     MalformedRequest,
     InternalError,
 }
@@ -101,6 +104,10 @@ impl EnvironmentResponse {
             Self::OpenMutexOk(page, offset) => ENVIRONMENT_RESPONSE_PROTOCOL.serialize(
                 OPEN_MUTEX_OK_MNEMONIC,
                 &[&page.to_string(), &offset.to_string()],
+            ),
+            Self::RegisterThreadOk => ENVIRONMENT_RESPONSE_PROTOCOL.serialize(
+                REGISTER_THREAD_OK_MNEMONIC,
+                &[]
             ),
             Self::MalformedRequest => {
                 ENVIRONMENT_RESPONSE_PROTOCOL.serialize(MALFORMED_REQUEST_MNEMONIC, &[])
@@ -128,6 +135,9 @@ impl EnvironmentResponse {
                     )
                 })?;
                 Ok(Self::OpenMutexOk(page, offset))
+            }
+            REGISTER_THREAD_OK_MNEMONIC => {
+                Ok(Self::RegisterThreadOk)
             }
             MALFORMED_REQUEST_MNEMONIC => Ok(Self::MalformedRequest),
             INTERNAL_ERROR_MNEMONIC => Ok(Self::InternalError),
