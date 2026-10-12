@@ -11,3 +11,4 @@ cfg_if::cfg_if! {
 }
 
 pub const DEFAULT_CACHE_LINE_PAIR_SIZE: usize = 128;
+pub const DEFAULT_OBSERVATION_BUFFER_SIZE: usize = 2 * 1024 * 1024; // 2 MiB resp. 256k entries
