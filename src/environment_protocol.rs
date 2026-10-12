@@ -10,6 +10,8 @@ use std::collections::HashMap;
 use std::sync::LazyLock;
 
 const OPEN_MUTEX_MNEMONIC: &str = "OPEN_MUT";
+const REGISTER_THREAD_MNEMONIC: &str = "THRD_NEW";
+const UNREGISTER_THREAD_MNEMONIC: &str = "THRD_BYE";
 
 const OPEN_MUTEX_OK_MNEMONIC: &str = "OPMUT_OK";
 const MALFORMED_REQUEST_MNEMONIC: &str = "MALFORMD";
@@ -19,7 +21,11 @@ pub static ENVIRONMENT_REQUEST_PROTOCOL: LazyLock<MessageProtocol> = LazyLock::n
     || {
         MessageProtocol::new(
             MNEMONIC_LEN,
-            HashMap::from([(OPEN_MUTEX_MNEMONIC, vec![MAX_NAME_LEN].into_boxed_slice())]),
+            HashMap::from([
+                (OPEN_MUTEX_MNEMONIC, vec![MAX_NAME_LEN].into_boxed_slice()),
+                (REGISTER_THREAD_MNEMONIC, vec![MAX_NAME_LEN].into_boxed_slice()),
+                (UNREGISTER_THREAD_MNEMONIC, vec![MAX_NAME_LEN].into_boxed_slice()),
+            ]),
         )
         .unwrap()
     }, /* If something goes wrong here, it is a configuration error in the source code; it should panic. */

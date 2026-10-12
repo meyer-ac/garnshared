@@ -191,7 +191,7 @@ impl<const SIZE: usize, const CACHE_LINE_PAIR_SIZE: usize>
     }
 
     /// # Safety
-    /// todo
+    /// Only one thread of one process may ever call this method
     #[inline(always)]
     pub unsafe fn enqueue(&self, value: usize) -> Result<(), ShareableSpscRingBufferError> {
         match unsafe {
@@ -203,7 +203,7 @@ impl<const SIZE: usize, const CACHE_LINE_PAIR_SIZE: usize>
     }
 
     /// # Safety
-    /// todo
+    /// Only one thread of one process may ever call this method
     #[inline(always)]
     pub unsafe fn dequeue(&self) -> Option<usize> {
         let mut value = MaybeUninit::<usize>::uninit();
